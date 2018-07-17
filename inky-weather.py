@@ -31,12 +31,11 @@ def init():
     }
 
     print(weather_info)
-
     draw_image(weather_info['icon'])
 
     # Set the data to be drawn on the display
-    draw_text(weather_info['summary'], x=10, y=10, font_size=32)
-    draw_text(weather_info['current_temp'], x=154, y=70, font_size=16)
+    draw_text(weather_info['summary'], x=10, y=20, font_size=16)
+    draw_text(weather_info['current_temp'], x=150, y=70, font_size=16)
     draw_text('High: %s' % weather_info['high_temp'], x=10, y=50, font_size=16)
     draw_text('Low: %s' % weather_info['low_temp'], x=10, y=70, font_size=16)
 
