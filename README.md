@@ -7,7 +7,7 @@ A Dark Sky weather display for the [Pimoroni Inky pHAT](https://learn.pimoroni.c
 - sudo pip install requests
 
 # Setup
-Register for a free developer account at https://developer.forecast.io/.  The API offers 1000 requests a day for free, which should be plenty for personal projects like this.
+Register for a free developer account at https://darksky.net/dev.  The API offers 1000 requests a day for free, which should be plenty for personal projects like this.
 - Update config.py with the following
 
 ```
