@@ -1,59 +1,83 @@
 # coding: utf-8
-
 import inkyphat
 import weather
-from PIL import ImageFont, Image
 
-from datetime import datetime
-import ConfigParser
 import textwrap
+from PIL import ImageFont, Image
+from datetime import datetime
 
-image_path = 'images/'
+
+IMAGE_DIR = "climacons"
+DISPLAY_WIDTH = 212
+DISPLAY_HEIGHT = 104
+WHITE = 0
+BLACK = 1
+RED = 2
 
 
 def init():
+
     # Setup the e-ink display
-    inkyphat.set_colour('black')
+    inkyphat.set_colour("black")
     inkyphat.set_rotation(180)
     inkyphat.set_border(inkyphat.WHITE)
 
-    # Get the current weather
+    # Show today's weather on the inkyphat
     forecast = weather.Weather()
-    current_weather = forecast.get_current_weather()
-    daily_weather = forecast.get_daily_weather()
+    show_todays_weather(forecast)
 
-    weather_info = {
-        'summary': current_weather['summary'],
-        'current_temp': str(int(round(current_weather['apparentTemperature']))),
-        'high_temp': str(int(round(daily_weather['apparentTemperatureHigh']))),
-        'low_temp': str(int(round(daily_weather['apparentTemperatureLow']))),
-        'icon': current_weather['icon'],
-    }
 
-    print(weather_info)
-    draw_image(weather_info['icon'])
+def show_todays_weather(weather):
+    current_weather = weather.get_current_weather()
+    daily_weather = weather.get_daily_weather()
+    # Create the base background which we will paste our images to
+    base_image = inkyphat.Image.new("P", (inkyphat.WIDTH, inkyphat.HEIGHT))
+    image_to_paste = Image.open(
+        "{image_dir}/{image_to_paste}.png".format(
+            image_dir=IMAGE_DIR, image_to_paste=current_weather["icon"]
+        )
+    )
+    img_w, img_h = image_to_paste.size
+    vertical_align = (inkyphat.HEIGHT - img_h) // 2
+    base_image = paste_image(
+        base_image, current_weather["icon"], x=130, y=vertical_align
+    )
+    inkyphat.paste(base_image)
 
     # Set the data to be drawn on the display
-    draw_text(weather_info['summary'], x=10, y=20, font_size=16)
-    draw_text(weather_info['current_temp'], x=150, y=70, font_size=16)
-    draw_text('High: %s' % weather_info['high_temp'], x=10, y=50, font_size=16)
-    draw_text('Low: %s' % weather_info['low_temp'], x=10, y=70, font_size=16)
+    current_temp = str(int(round(current_weather["apparentTemperature"])))
+    high_temp = str(int(round(daily_weather["apparentTemperatureHigh"])))
+    low_temp = str(int(round(daily_weather["apparentTemperatureLow"])))
+    draw_text(current_weather["summary"], x=10, y=20, font_size=16)
+    draw_text(current_temp, x=150, y=80, font_size=16)
+    draw_text("High: %s" % high_temp, x=10, y=60, font_size=16)
+    draw_text("Low: %s" % low_temp, x=10, y=80, font_size=16)
 
-    # draw_image(weather_info['icon'])
-    # draw_image('1-clear-day')
     # Draw everything
     inkyphat.show()
 
 
 def draw_text(text, x, y, font_size):
-    font = ImageFont.truetype('fonts/ChiKareGo.ttf', font_size)
+    font = ImageFont.truetype("fonts/ChiKareGo.ttf", font_size)
     w, h = font.getsize(text)
     inkyphat.text((x, y), text, inkyphat.BLACK, font)
 
 
 def draw_image(image):
-    inkyphat.set_image(Image.open(image_path + image + '.png'))
+    inkyphat.set_image(
+        Image.open("{image_dir}/{image}.png".format(image_dir=IMAGE_DIR, image=image))
+    )
 
 
-if __name__ == '__main__':
+def paste_image(base_image, image_to_paste, x, y):
+    image = Image.open(
+        "{image_dir}/{image_to_paste}.png".format(
+            image_dir=IMAGE_DIR, image_to_paste=image_to_paste
+        )
+    )
+    base_image.paste(image, (x, y))
+    return base_image
+
+
+if __name__ == "__main__":
     init()
