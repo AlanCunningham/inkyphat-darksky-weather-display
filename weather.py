@@ -22,17 +22,16 @@ class Weather:
 
 		# Make the initial weather request
 		request_url = url + api_key + "/" + lon + "," + lat + "?units=" + units
-		r = requests.get(request_url)
 		resp = requests.get(url=request_url)
 		self.result = json.loads(resp.text)
-		self.suggest_clothes()
+		print("Retrieved weather for {country}".format(country=self.result["timezone"]))
 
 	def get_current_weather(self):
 		current_weather = self.result["currently"]
 		return current_weather
 
 	def get_daily_weather(self):
-		daily_weather = self.result["daily"]["data"][0]
+		daily_weather = self.result["daily"]["data"]
 		return daily_weather
 
 	def get_hourly_weather(self):
