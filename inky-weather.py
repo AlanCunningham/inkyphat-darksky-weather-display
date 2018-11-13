@@ -98,9 +98,9 @@ def show_todays_weather():
 def show_daily_weather():
     forecast = read_weather_json()
     weekly_weather = forecast["daily"]["data"]
-    today = weekly_weather[1]
-    tomorrow = weekly_weather[2]
-    overmorrow = weekly_weather[3]
+    today = weekly_weather[0]
+    tomorrow = weekly_weather[1]
+    overmorrow = weekly_weather[2]
 
     # Datetime objects
     today_time = datetime.fromtimestamp(today["time"]).strftime("%a")
@@ -108,9 +108,9 @@ def show_daily_weather():
     overmorrow_time = datetime.fromtimestamp(overmorrow["time"]).strftime("%a")
 
     base_image = inkyphat.Image.new("P", (inkyphat.WIDTH, inkyphat.HEIGHT))
-    base_image = paste_image(base_image, today["icon"], x=10, y=30)
-    base_image = paste_image(base_image, tomorrow["icon"], x=75, y=30)
-    base_image = paste_image(base_image, overmorrow["icon"], x=140, y=30)
+    base_image = paste_image(base_image, today["icon"], x=10, y="middle")
+    base_image = paste_image(base_image, tomorrow["icon"], x=75, y="middle")
+    base_image = paste_image(base_image, overmorrow["icon"], x=140, y="middle")
 
     inkyphat.paste(base_image)
 
