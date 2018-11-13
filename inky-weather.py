@@ -3,6 +3,10 @@ import inkyphat
 import weather
 
 import textwrap
+import buttonshim
+import signal
+import ConfigParser
+import json
 from datetime import datetime
 from PIL import ImageFont, Image
 from datetime import datetime
@@ -22,10 +26,19 @@ def init():
     inkyphat.set_rotation(180)
     inkyphat.set_border(inkyphat.WHITE)
 
-    # Show today's weather on the inkyphat
-    forecast = weather.Weather()
-    # show_todays_weather(forecast)
-    show_daily_weather(forecast)
+    config = ConfigParser.ConfigParser()
+    config.read("config.py")
+
+    # Support for Button SHIM
+    if config.getboolean("raspberry_pi", "button_shim"):
+        print("Using button shim support")
+        show_todays_weather()
+        signal.pause()
+    else:
+        # Show today's weather on the inkyphat
+        print("No button shim - showing weather")
+        weather.get_weather_json()
+        show_daily_weather()
 
 
 def draw_text(text, x, y, font_size=16):
@@ -48,9 +61,21 @@ def paste_image(base_image, image_to_paste, x, y="middle"):
     return base_image
 
 
-def show_todays_weather(weather):
-    current_weather = weather.get_current_weather()
-    daily_weather = weather.get_daily_weather()[0]
+def clear_screen():
+    inkyphat.paste(inkyphat.Image.new("P", (inkyphat.WIDTH, inkyphat.HEIGHT)))
+    inkyphat.show()
+
+
+def read_weather_json():
+    with open("weather.json") as json_data:
+        weather = json.load(json_data)
+    return weather
+
+
+def show_todays_weather():
+    forecast = read_weather_json()
+    current_weather = forecast["currently"]
+    daily_weather = forecast["daily"]["data"][0]
     # Set the data to be drawn on the display
     current_temp = str(int(round(current_weather["apparentTemperature"])))
     high_temp = str(int(round(daily_weather["apparentTemperatureHigh"])))
@@ -70,8 +95,9 @@ def show_todays_weather(weather):
     inkyphat.show()
 
 
-def show_daily_weather(weather):
-    weekly_weather = weather.get_daily_weather()
+def show_daily_weather():
+    forecast = read_weather_json()
+    weekly_weather = forecast["daily"]["data"]
     today = weekly_weather[1]
     tomorrow = weekly_weather[2]
     overmorrow = weekly_weather[3]
@@ -85,33 +111,46 @@ def show_daily_weather(weather):
     base_image = paste_image(base_image, today["icon"], x=10, y=30)
     base_image = paste_image(base_image, tomorrow["icon"], x=75, y=30)
     base_image = paste_image(base_image, overmorrow["icon"], x=140, y=30)
+
     inkyphat.paste(base_image)
 
     draw_text(today_time, x=25, y=10, font_size=16)
     draw_text(tomorrow_time, x=90, y=10, font_size=16)
     draw_text(overmorrow_time, x=155, y=10, font_size=16)
 
-    today_avg_temp = "{low}-{high}".format(
+    today_date_range = "{low}-{high}".format(
         low=str(int(today["apparentTemperatureLow"])),
         high=str(int(today["apparentTemperatureHigh"])),
     )
 
-    tomorrow_avg_temp = "{low}-{high}".format(
+    tomorrow_date_range = "{low}-{high}".format(
         low=str(int(tomorrow["apparentTemperatureLow"])),
         high=str(int(tomorrow["apparentTemperatureHigh"])),
     )
 
-    overmorrow_avg_temp = "{low}-{high}".format(
+    overmorrow_date_range = "{low}-{high}".format(
         low=str(int(overmorrow["apparentTemperatureLow"])),
         high=str(int(overmorrow["apparentTemperatureHigh"])),
     )
 
-    draw_text(today_avg_temp, x=25, y=83, font_size=16)
-    draw_text(tomorrow_avg_temp, x=90, y=83, font_size=16)
-    draw_text(overmorrow_avg_temp, x=155, y=83, font_size=16)
+    draw_text(today_date_range, x=25, y=83, font_size=16)
+    draw_text(tomorrow_date_range, x=90, y=83, font_size=16)
+    draw_text(overmorrow_date_range, x=155, y=83, font_size=16)
 
     # Draw everything
     inkyphat.show()
+
+
+@buttonshim.on_press(buttonshim.BUTTON_A)
+def button_todays_weather(button, pressed):
+    clear_screen()
+    show_todays_weather()
+
+
+@buttonshim.on_press(buttonshim.BUTTON_B)
+def button_daily_weather(button, pressed):
+    clear_screen()
+    show_daily_weather()
 
 
 if __name__ == "__main__":
