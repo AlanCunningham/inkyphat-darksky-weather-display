@@ -5,7 +5,7 @@ A Dark Sky weather display for the [Pimoroni Inky pHAT](https://learn.pimoroni.c
 <img src="images/example.jpeg" width="600">
 
 # Dependencies
-- [Inky pHAT library](https://learn.pimoroni.com/tutorial/sandyj/getting-started-with-inky-phat)
+- [Inky pHAT library](https://github.com/pimoroni/inky-phat)
 - sudo pip install requests
 
 # Setup
