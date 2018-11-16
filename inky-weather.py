@@ -1,14 +1,15 @@
 # coding: utf-8
-import inkyphat
 import weather
 
-import textwrap
+from inky import InkyPHAT
 import buttonshim
+
+import textwrap
 import signal
 import ConfigParser
 import json
 from datetime import datetime
-from PIL import ImageFont, Image
+from PIL import Image, ImageFont, ImageDraw
 from datetime import datetime
 
 
@@ -19,15 +20,17 @@ WHITE = 0
 BLACK = 1
 RED = 2
 
+inkyphat = InkyPHAT("black")
+
 
 def init():
     # Setup the e-ink display
-    inkyphat.set_colour("black")
-    inkyphat.set_rotation(180)
     inkyphat.set_border(inkyphat.WHITE)
 
     config = ConfigParser.ConfigParser()
     config.read("config.py")
+
+    weather.get_weather_json()
 
     # Support for Button SHIM
     if config.getboolean("raspberry_pi", "button_shim"):
@@ -37,15 +40,15 @@ def init():
     else:
         # Show today's weather on the inkyphat
         print("No button shim - showing weather")
-        weather.get_weather_json()
-        show_daily_weather()
+        show_todays_weather()
 
 
-def draw_text(text, x, y, font_size=16):
-    font = ImageFont.truetype("fonts/ChiKareGo.ttf", font_size)
+def draw_text(base_image, text, x, y, font_size=16):
+    font = ImageFont.truetype("fonts/ChiKareGo.ttf", 16)
+    draw = ImageDraw.Draw(base_image)
     w, h = font.getsize(text)
-    inkyphat.text((x, y), text, inkyphat.BLACK, font)
-
+    draw.text((x, y), text, inkyphat.BLACK, font)
+    inkyphat.set_image(base_image)
 
 def paste_image(base_image, image_to_paste, x, y="middle"):
     image = Image.open(
@@ -82,14 +85,14 @@ def show_todays_weather():
     low_temp = str(int(round(daily_weather["apparentTemperatureLow"])))
 
     # Create the base background which we will paste our images to
-    base_image = inkyphat.Image.new("P", (inkyphat.WIDTH, inkyphat.HEIGHT))
+    base_image = Image.new("P", (inkyphat.WIDTH, inkyphat.HEIGHT))
     base_image = paste_image(base_image, current_weather["icon"], x=130)
-    inkyphat.paste(base_image)
+    inkyphat.set_image(base_image)
 
-    draw_text(current_weather["summary"], x=10, y=20)
-    draw_text(current_temp, x=150, y=80)
-    draw_text("High: %s" % high_temp, x=10, y=60)
-    draw_text("Low: %s" % low_temp, x=10, y=80)
+    draw_text(base_image, current_weather["summary"], x=10, y=20)
+    draw_text(base_image, current_temp, x=150, y=80)
+    draw_text(base_image, "High: %s" % high_temp, x=10, y=60)
+    draw_text(base_image, "Low: %s" % low_temp, x=10, y=80)
 
     # Draw everything
     inkyphat.show()
@@ -107,16 +110,16 @@ def show_daily_weather():
     tomorrow_time = datetime.fromtimestamp(tomorrow["time"]).strftime("%a")
     overmorrow_time = datetime.fromtimestamp(overmorrow["time"]).strftime("%a")
 
-    base_image = inkyphat.Image.new("P", (inkyphat.WIDTH, inkyphat.HEIGHT))
+    base_image = Image.new("P", (inkyphat.WIDTH, inkyphat.HEIGHT))
     base_image = paste_image(base_image, today["icon"], x=10, y="middle")
     base_image = paste_image(base_image, tomorrow["icon"], x=75, y="middle")
     base_image = paste_image(base_image, overmorrow["icon"], x=140, y="middle")
 
-    inkyphat.paste(base_image)
+    inkyphat.set_image(base_image)
 
-    draw_text(today_time, x=25, y=10, font_size=16)
-    draw_text(tomorrow_time, x=90, y=10, font_size=16)
-    draw_text(overmorrow_time, x=155, y=10, font_size=16)
+    draw_text(base_image, today_time, x=25, y=10, font_size=16)
+    draw_text(base_image, tomorrow_time, x=90, y=10, font_size=16)
+    draw_text(base_image, overmorrow_time, x=155, y=10, font_size=16)
 
     today_date_range = "{low}-{high}".format(
         low=str(int(today["apparentTemperatureLow"])),
@@ -133,23 +136,23 @@ def show_daily_weather():
         high=str(int(overmorrow["apparentTemperatureHigh"])),
     )
 
-    draw_text(today_date_range, x=25, y=83, font_size=16)
-    draw_text(tomorrow_date_range, x=90, y=83, font_size=16)
-    draw_text(overmorrow_date_range, x=155, y=83, font_size=16)
+    draw_text(base_image, today_date_range, x=25, y=83, font_size=16)
+    draw_text(base_image, tomorrow_date_range, x=90, y=83, font_size=16)
+    draw_text(base_image, overmorrow_date_range, x=155, y=83, font_size=16)
 
     # Draw everything
     inkyphat.show()
 
 
-@buttonshim.on_press(buttonshim.BUTTON_A)
+@buttonshim.on_press(buttonshim.BUTTON_A, repeat=False)
 def button_todays_weather(button, pressed):
-    clear_screen()
+    # clear_screen()
     show_todays_weather()
 
 
-@buttonshim.on_press(buttonshim.BUTTON_B)
+@buttonshim.on_press(buttonshim.BUTTON_B, repeat=False)
 def button_daily_weather(button, pressed):
-    clear_screen()
+    # clear_screen()
     show_daily_weather()
 
 
