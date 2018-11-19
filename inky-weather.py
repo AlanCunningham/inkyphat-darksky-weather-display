@@ -6,6 +6,7 @@ import buttonshim
 
 import textwrap
 import signal
+import sys
 import ConfigParser
 import json
 from datetime import datetime
@@ -20,27 +21,8 @@ WHITE = 0
 BLACK = 1
 RED = 2
 
+
 inkyphat = InkyPHAT("black")
-
-
-def init():
-    # Setup the e-ink display
-    inkyphat.set_border(inkyphat.WHITE)
-
-    config = ConfigParser.ConfigParser()
-    config.read("config.py")
-
-    weather.get_weather_json()
-
-    # Support for Button SHIM
-    if config.getboolean("raspberry_pi", "button_shim"):
-        print("Using button shim support")
-        show_todays_weather()
-        signal.pause()
-    else:
-        # Show today's weather on the inkyphat
-        print("No button shim - showing weather")
-        show_todays_weather()
 
 
 def draw_text(base_image, text, x, y, font_size=16):
@@ -49,6 +31,7 @@ def draw_text(base_image, text, x, y, font_size=16):
     w, h = font.getsize(text)
     draw.text((x, y), text, inkyphat.BLACK, font)
     inkyphat.set_image(base_image)
+
 
 def paste_image(base_image, image_to_paste, x, y="middle"):
     image = Image.open(
@@ -64,12 +47,9 @@ def paste_image(base_image, image_to_paste, x, y="middle"):
     return base_image
 
 
-def clear_screen():
-    inkyphat.paste(inkyphat.Image.new("P", (inkyphat.WIDTH, inkyphat.HEIGHT)))
-    inkyphat.show()
-
-
 def read_weather_json():
+    # weather.json is updated by calling weather.py. This can be done via
+    # a cronjob or something similar.
     with open("weather.json") as json_data:
         weather = json.load(json_data)
     return weather
@@ -117,28 +97,28 @@ def show_daily_weather():
 
     inkyphat.set_image(base_image)
 
-    draw_text(base_image, today_time, x=25, y=10, font_size=16)
-    draw_text(base_image, tomorrow_time, x=90, y=10, font_size=16)
-    draw_text(base_image, overmorrow_time, x=155, y=10, font_size=16)
+    draw_text(base_image, today_time, x=25, y=10)
+    draw_text(base_image, tomorrow_time, x=90, y=10)
+    draw_text(base_image, overmorrow_time, x=155, y=10)
 
-    today_date_range = "{low}-{high}".format(
+    today_temp_range = "{low}-{high}".format(
         low=str(int(today["apparentTemperatureLow"])),
         high=str(int(today["apparentTemperatureHigh"])),
     )
 
-    tomorrow_date_range = "{low}-{high}".format(
+    tomorrow_temp_range = "{low}-{high}".format(
         low=str(int(tomorrow["apparentTemperatureLow"])),
         high=str(int(tomorrow["apparentTemperatureHigh"])),
     )
 
-    overmorrow_date_range = "{low}-{high}".format(
+    overmorrow_temp_range = "{low}-{high}".format(
         low=str(int(overmorrow["apparentTemperatureLow"])),
         high=str(int(overmorrow["apparentTemperatureHigh"])),
     )
 
-    draw_text(base_image, today_date_range, x=25, y=83, font_size=16)
-    draw_text(base_image, tomorrow_date_range, x=90, y=83, font_size=16)
-    draw_text(base_image, overmorrow_date_range, x=155, y=83, font_size=16)
+    draw_text(base_image, today_temp_range, x=25, y=83)
+    draw_text(base_image, tomorrow_temp_range, x=90, y=83)
+    draw_text(base_image, overmorrow_temp_range, x=155, y=83)
 
     # Draw everything
     inkyphat.show()
@@ -146,15 +126,41 @@ def show_daily_weather():
 
 @buttonshim.on_press(buttonshim.BUTTON_A, repeat=False)
 def button_todays_weather(button, pressed):
-    # clear_screen()
     show_todays_weather()
 
 
 @buttonshim.on_press(buttonshim.BUTTON_B, repeat=False)
 def button_daily_weather(button, pressed):
-    # clear_screen()
     show_daily_weather()
 
 
+# Gracefully stop on Ctrl-C
+def signal_handler(signal, frame):
+    print("\nGracefully closing, please wait a moment")
+    sys.exit(0)
+
+
+def main():
+    # Setup the e-ink display
+    print("Setting everything up...")
+    inkyphat.set_border(inkyphat.WHITE)
+
+    config = ConfigParser.ConfigParser()
+    config.read("config.py")
+
+    weather.get_weather_json()
+
+    # Support for Button SHIM
+    if config.getboolean("raspberry_pi", "button_shim"):
+        print("Using button shim support")
+        show_todays_weather()
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.pause()
+    else:
+        # Show today's weather on the inkyphat
+        print("No button shim - showing weather")
+        show_todays_weather()
+
+
 if __name__ == "__main__":
-    init()
+    main()
