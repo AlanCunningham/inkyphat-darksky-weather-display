@@ -3,10 +3,13 @@
 
 import requests
 import json
-import ConfigParser
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 
 def get_weather_json():
-	config = ConfigParser.ConfigParser()
+	config = configparser.ConfigParser()
 	config.read('config.py')
 	url = "https://api.darksky.net/forecast/"
 	api_key = config.get('darksky', 'api_key')

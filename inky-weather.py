@@ -4,10 +4,13 @@ import weather
 from inky import InkyPHAT
 import buttonshim
 
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 import textwrap
 import signal
 import sys
-import ConfigParser
 import json
 from datetime import datetime
 from PIL import Image, ImageFont, ImageDraw
@@ -145,7 +148,7 @@ def main():
     print("Setting everything up...")
     inkyphat.set_border(inkyphat.WHITE)
 
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read("config.py")
 
     weather.get_weather_json()
