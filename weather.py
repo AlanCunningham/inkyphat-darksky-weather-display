@@ -18,7 +18,7 @@ def get_weather_json():
 	units = config.get('darksky', 'units')
 
 	# Make the weather request and save to a json file
-	request_url = url + api_key + "/" + lon + "," + lat + "?units=" + units
+	request_url = url + api_key + "/" + lat + "," + lon + "?units=" + units
 	resp = requests.get(url=request_url)
 	result = json.loads(resp.text)
 	print("Retrieved weather for {country}".format(country=result["timezone"]))
