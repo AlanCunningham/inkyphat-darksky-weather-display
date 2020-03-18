@@ -24,7 +24,7 @@ units: uk2
 From terminal, run `python inky-weather.py`.
 
 
-# With Pimoroni's [Button SHIM support](https://shop.pimoroni.com/products/button-shim)!
+# With Pimoroni's [Button SHIM support](https://github.com/pimoroni/button-shim)!
 You can use the button SHIM to switch between weather displays (daily or weekly).  To do this, add the following to the config:
 
 ```
